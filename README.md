@@ -1,21 +1,18 @@
 # microbialNets
 
-abstract: Fast detection of repackaged Android applications based on the comparison of resource files included into the package.
+abstract: "Network Analysis: A Key Technique in Microbial Community Research".
 authors:
-  - family-names: Zhauniarovich
-    given-names: Yury
-    orcid: "https://orcid.org/0000-0001-9116-0728"
-cff-version: 1.2.0
-date-released: "2013-11-30"
+  - family-names: \´Alvarez-Mart\´inez, L\´azaro-Vidal
+    given-names: Roberto, V\´ictor
+date-released: "2023-12-25"
 identifiers:
   - type: url
-    value: "https://github.com/zyrikby/FSquaDRA/tree/dc42c93991240da0fc9f1081e72be3eeb17d2638"
+    value: "https://github.com/Nertekkad/microbialNets"
     description: Latest version
 keywords:
-  - research
-  - "detection repackaged Android applications"
-  - "resouce files"
-license: Apache-2.0
+  - "Network's inference"
+  - "Microbiota"
+  - "Multilayer networks"
 message: If you use this software, please cite it using these metadata.
-repository-code: "https://github.com/zyrikby/FSquaDRA"
-title: FSquaDRA
+repository-code: "https://github.com/Nertekkad/microbialNets"
+title: microbialNets
