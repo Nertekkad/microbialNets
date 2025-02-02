@@ -36,29 +36,26 @@
 library("mlBioNets")
 library("phyloseq")
 library("minet")
-library("SpiecEasi")
 library("igraph")
 library("muxViz")
-
-# Data from Mayoral et al. (2022)
-data("ps2")
+data("beetle_nightshade")
 
 # Otus and taxa tables
-T_table <- as.data.frame(tax_table(ps2))
-O_table <- as.data.frame(t(otu_table(ps2)))
+T_table <- as.data.frame(tax_table(beetle_nightshade))
+O_table <- as.data.frame(t(otu_table(beetle_nightshade)))
 
 # Let's collapse the tables at genus level
-T_Collapsed <- T_collapse(T_table = T_table, O_table = O_table, 
-                          names_level = "Genus")
+BN_abs <- T_collapse(is_phyloseq = T, ps = beetle_nightshade, names_level ="Genus")
 
 # Separate insect and plant data
-Insect <- which(sample_data(ps2)$Type =="Insect")
-Insect <- sample_data(ps2)$ID[Insect]
-Plant <- which(sample_data(ps2)$Type =="Plant")
-Plant <- sample_data(ps2)$ID[Plant]
-Insectmat <- T_Collapsed[Insect,]
-Plantmat <- T_Collapsed[Plant,]
-# Node colors at phylum level
+Insect <- which(sample_data(beetle_nightshade)$Type =="Insect")
+Insect <- sample_data(beetle_nightshade)$ID[Insect]
+Plant <- which(sample_data(beetle_nightshade)$Type =="Plant")
+Plant <- sample_data(beetle_nightshade)$ID[Plant]
+Insectmat <- BN_abs[Insect,]
+Plantmat <- BN_abs[Plant,]
+
+# Assign node colors at phylum level
 unq <- unique(T_table[,"Phylum"])
 colors <- rainbow(length(unq))
 
@@ -82,30 +79,34 @@ Plant_minet <- as.undirected(Plant_minet)
 g.list <- list(Insect_minet, Plant_minet)
 g.list <- v_colored_ml(g.list, T_table, g_tax = "Phylum",
                        p_tax = "Genus", g_colors = colors)
+g.list <- ctr_ml(g.list, "degree")
+
 
 ###### Plot multilayer network by phylum ######
-abs_IP <- list(Insectmat, Plantmat)
 lay <- layoutMultiplex(g.list, layout="kk", ggplot.format=F, box=T)
 plot_multiplex3D(g.list, layer.layout=lay,
                  layer.colors=c("blue3", "green3"),
                  layer.shift.x=0.5, layer.space=2,
                  layer.labels=NULL, layer.labels.cex=1.5,
                  node.size.values="auto",
-                 node.size.scale=abs_mat(abs_IP, g.list, 10),
+                 # Node size according to abundance
+                 node.size.scale=abs_mat(list(Insectmat, Plantmat), g.list, 10),
+                 # Node color according to phylum
                  node.colors=node_color_mat(g.list, "phylo"),
                  edge.colors="#838B8B",
                  node.colors.aggr=NULL,
                  show.aggregate=F)
 
 ###### Plot multilayer network by centrality ######
-g.list<-ctr_ml(g.list, ctr_type = "degree")
 lay <- layoutMultiplex(g.list, layout="kk", ggplot.format=F, box=T)
 plot_multiplex3D(g.list, layer.layout=lay,
                  layer.colors=c("blue3", "green3"),
                  layer.shift.x=0.5, layer.space=2,
                  layer.labels=NULL, layer.labels.cex=1.5,
                  node.size.values="auto",
-                 node.size.scale=abs_mat(abs_IP, g.list, 20),
+                 # Node size according to abundance
+                 node.size.scale=abs_mat(list(Insectmat, Plantmat), g.list, 10),
+                 # Node color according to centrality
                  node.colors=node_color_mat(g.list, "centrality"),
                  edge.colors="#838B8B",
                  node.colors.aggr=NULL,
@@ -116,32 +117,36 @@ plot_multiplex3D(g.list, layer.layout=lay,
 
 # Coabundance networks
 
+library(SpiecEasi)
+
 # Insect (beetle)
-sparccNet<-sparcc(Insectmat)
+sparccNet <- sparcc(Insectmat)
 sparccNet <- abs(sparccNet$Cor) >= 0.4
-insect_sparCC<-adj2igraph(sparccNet)
+insect_sparCC <- adj2igraph(sparccNet)
 vertex.attributes(insect_sparCC) <- list(name = colnames(Insectmat))
 
 # Plant (solanaceous)
-sparccNet<-sparcc(Plantmat)
+sparccNet <- sparcc(Plantmat)
 sparccNet <- abs(sparccNet$Cor) >= 0.4
-plant_sparCC<-adj2igraph(sparccNet)
+plant_sparCC <- adj2igraph(sparccNet)
 vertex.attributes(plant_sparCC) <- list(name = colnames(Plantmat))
 
 # Color assignment for the nodes of the layers
 g.list2 <- list(insect_sparCC, plant_sparCC)
 g.list2 <- v_colored_ml(g.list2, T_table, g_tax = "Phylum",
                        p_tax = "Genus", g_colors = colors)
+g.list2 <- ctr_ml(g.list2, "degree")
 
 ###### Plot multilayer network by phylum ######
-abs_IP<-list(Insectmat, Plantmat)
-lay <- layoutMultiplex(g.list, layout="kk", ggplot.format=F, box=T)
+lay <- layoutMultiplex(g.list2, layout="kk", ggplot.format=F, box=T)
 plot_multiplex3D(g.list2, layer.layout=lay,
                  layer.colors=c("red3", "green3"),
                  layer.shift.x=0.5, layer.space=2,
                  layer.labels=NULL, layer.labels.cex=1.5,
                  node.size.values="auto",
-                 node.size.scale=abs_mat(abs_IP, g.list2, 20),
+                 # Node size according to abundance
+                 node.size.scale=abs_mat(list(Insectmat, Plantmat), g.list2, 20),
+                 # Node color according to phylum
                  node.colors=node_color_mat(g.list2, "phylo"),
                  edge.colors="#838B8B",
                  node.colors.aggr=NULL,
@@ -149,15 +154,15 @@ plot_multiplex3D(g.list2, layer.layout=lay,
 
 
 ###### Plot multilayer network by centrality ######
-g.list2<-ctr_ml(g.list2, ctr_type = "degree")
-abs_IP<-list(Insectmat, Plantmat)
 lay <- layoutMultiplex(g.list2, layout="kk", ggplot.format=F, box=T)
 plot_multiplex3D(g.list2, layer.layout=lay,
-                 layer.colors=c("blue3", "green3"),
+                 layer.colors=c("red3", "green3"),
                  layer.shift.x=0.5, layer.space=2,
                  layer.labels=NULL, layer.labels.cex=1.5,
                  node.size.values="auto",
-                 node.size.scale=abs_mat(abs_IP, g.list2, 20),
+                 # Node size according to abundance
+                 node.size.scale=abs_mat(list(Insectmat, Plantmat), g.list2, 20),
+                 # Node color according to centrality
                  node.colors=node_color_mat(g.list2, "centrality"),
                  edge.colors="#838B8B",
                  node.colors.aggr=NULL,
